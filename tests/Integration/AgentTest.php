@@ -133,6 +133,7 @@ final class AgentTest extends TestCase
         $config = Config::fromArray([
             ConfigKey::APPLICATION_NAME => self::APPLICATION_NAME,
             ConfigKey::MONITORING_ENABLED => true,
+            ConfigKey::ERRORS_ENABLED => true,
         ]);
         $this->setUpWithConfiguration($config);
 
