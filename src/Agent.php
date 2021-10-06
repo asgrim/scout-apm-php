@@ -34,6 +34,7 @@ use Scoutapm\Events\Tag\Tag;
 use Scoutapm\Extension\ExtensionCapabilities;
 use Scoutapm\Extension\PotentiallyAvailableExtensionCapabilities;
 use Scoutapm\Extension\Version;
+use Scoutapm\Helper\DetermineHostname\DetermineHostnameWithConfigOverride;
 use Scoutapm\Helper\FindApplicationRoot;
 use Scoutapm\Helper\LocateFileOrFolder;
 use Scoutapm\Helper\Superglobals\Superglobals;
@@ -544,7 +545,8 @@ final class Agent implements ScoutApmAgent
                 new DateTimeImmutable('now', new DateTimeZone('UTC')),
                 $this->config,
                 $this->phpExtension,
-                new FindApplicationRoot($this->locateFileOrFolder, $this->config, $this->superglobals)
+                new FindApplicationRoot($this->locateFileOrFolder, $this->config, $this->superglobals),
+                new DetermineHostnameWithConfigOverride($this->config)
             ));
 
             $this->markMetadataSent();
