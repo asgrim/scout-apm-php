@@ -46,6 +46,9 @@ jobs:
         run: "composer remove --dev symfony/* laravel/* --no-update --no-interaction"
       - name: "Require framework ${{ matrix.laravel-version}}"
         run: "composer require laravel/framework:${{ matrix.laravel-version}} --no-update --no-interaction --prefer-dist --prefer-stable"
+      - name: "Require Guzzle 6 ${{ matrix.lumen-version}}"
+        if: ${{ matrix.php-version == '7.1' }}
+        run: "composer require --dev php-http/guzzle6-adapter --no-update --no-interaction --prefer-dist --prefer-stable"
       - name: "Composer update with new requirements"
         run: "composer update --no-interaction --prefer-dist --prefer-stable"
       - name: "Run PHPUnit (Laravel) test suite"
@@ -92,7 +95,11 @@ jobs:
       - name: "Add scout-apm-php as a repository"
         run: cd test-app && composer config repositories.scout path ../scout-apm-php
       - name: "Require scout-apm-php current checkout"
-        run: cd test-app && composer require scoutapp/scout-apm-php:*@dev composer/package-versions-deprecated
+        if: ${{ matrix.php-version != '7.1' }}
+        run: cd test-app && composer require scoutapp/scout-apm-php:*@dev guzzlehttp/guzzle composer/package-versions-deprecated
+      - name: "Require scout-apm-php current checkout (PHP 7.1/7.2)"
+        if: ${{ matrix.php-version == '7.1' }}
+        run: cd test-app && composer require scoutapp/scout-apm-php:*@dev php-http/guzzle6-adapter nyholm/psr7 composer/package-versions-deprecated
       - name: "Publish the provider"
         run: cd test-app && php artisan vendor:publish --provider="Scoutapm\Laravel\Providers\ScoutApmServiceProvider"
       - name: "Configure Scout"
