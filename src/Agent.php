@@ -443,9 +443,6 @@ final class Agent implements ScoutApmAgent
     /** {@inheritDoc} */
     public function send(): bool
     {
-        // @todo move this below "stop request"
-        $this->errorHandling->sendCollectedErrors();
-
         // Don't send if the agent is not enabled.
         if (! $this->enabled()) {
             $this->logger->debug('Not sending payload, monitoring is not enabled');
@@ -485,6 +482,8 @@ final class Agent implements ScoutApmAgent
             $this->sendMetadataIfRequired();
 
             $this->request->stopIfRunning();
+
+            $this->errorHandling->sendCollectedErrors();
 
             $shouldLogContent = $this->config->get(ConfigKey::LOG_PAYLOAD_CONTENT);
 
