@@ -46,9 +46,11 @@ jobs:
         run: "composer remove --dev symfony/* laravel/* --no-update --no-interaction"
       - name: "Require framework ${{ matrix.laravel-version}}"
         run: "composer require laravel/framework:${{ matrix.laravel-version}} --no-update --no-interaction --prefer-dist --prefer-stable"
-      - name: "Require Guzzle 6 ${{ matrix.lumen-version}}"
+      - name: "Replace guzzlehttp/guzzle with php-http/guzzle6-adapter for PHP 7.1"
         if: ${{ matrix.php-version == '7.1' }}
-        run: "composer require --dev php-http/guzzle6-adapter --no-update --no-interaction --prefer-dist --prefer-stable"
+        run: |
+          composer remove --dev guzzlehttp/guzzle --no-update --no-interaction
+          composer require --dev php-http/guzzle6-adapter --no-update --no-interaction
       - name: "Composer update with new requirements"
         run: "composer update --no-interaction --prefer-dist --prefer-stable"
       - name: "Run PHPUnit (Laravel) test suite"
