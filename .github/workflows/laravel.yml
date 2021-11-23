@@ -104,8 +104,19 @@ jobs:
         run: cd test-app && composer require scoutapp/scout-apm-php:*@dev php-http/guzzle6-adapter nyholm/psr7 composer/package-versions-deprecated
       - name: "Publish the provider"
         run: cd test-app && php artisan vendor:publish --provider="Scoutapm\Laravel\Providers\ScoutApmServiceProvider"
+      - name: "Configure error handler (Laravel 5-6)"
+        if: ${{ matrix.laravel-version == '5.5.*' || matrix.laravel-version == '6.*' }}
+        run: cd test-app && cp ../scout-apm-php/.github/fixtures/laravel5-6-exception-handler.php app/Exceptions/Handler.php
+      - name: "Configure error handler (Laravel 7)"
+        if: ${{ matrix.laravel-version == '7.*' }}
+        run: cd test-app && cp ../scout-apm-php/.github/fixtures/laravel7-exception-handler.php app/Exceptions/Handler.php
+      - name: "Configure error handler (Laravel 8)"
+        if: ${{ matrix.laravel-version == '8.*' }}
+        run: cd test-app && cp ../scout-apm-php/.github/fixtures/laravel8-exception-handler.php app/Exceptions/Handler.php
+      - name: "Add route to trigger error"
+        run: cd test-app && echo -e "Route::get('/e', function () { throw new \RuntimeException('fail'); });" >> routes/web.php
       - name: "Configure Scout"
-        run: cd test-app && echo -e "\nSCOUT_KEY=\"\${SCOUT_APM_KEY}\"\nSCOUT_NAME=\"My Laravel App\"\nSCOUT_MONITOR=true\nSCOUT_LOG_LEVEL=\"debug\"" >> .env
+        run: cd test-app && echo -e "\nSCOUT_KEY=\"\${SCOUT_APM_KEY}\"\nSCOUT_NAME=\"My Laravel App\"\nSCOUT_MONITOR=true\nSCOUT_LOG_LEVEL=\"debug\"\nSCOUT_ERRORS_ENABLED=true" >> .env
       - name: "Load the index page to trigger instrumentation"
         run: |
           cd test-app
@@ -116,11 +127,18 @@ jobs:
           # Very occasionally in GH Actions, core-agent didn't quite start in time - so load the page twice
           wget -O /dev/null http://localhost:8000
           sleep 1
-          wget http://localhost:8000
+          # Regular page load instrumentation
+          wget --content-on-error -O index.html http://localhost:8000
           cat index.html
+          # Error capture
+          wget --content-on-error -O error.html http://localhost:8000/e || true
+          cat error.html
           ps -ax
       - name: "Check logs for successful payload send"
         run: |
           cd test-app
           cat storage/logs/laravel.log
+          echo "Checking for APM instrumentation"
           grep -q "local.DEBUG: \[Scout\] Sent whole payload successfully to core agent." storage/logs/laravel.log
+          echo "Checking for Error Reporting"
+          grep -q "local.DEBUG: \[Scout\] Sent 1 error event to Scout Error Reporting" storage/logs/laravel.log
